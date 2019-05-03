@@ -1,4 +1,6 @@
-# vis course assignment1
+# steam - vis course assignment1
+
+data source [https://data.world/craigkelly/steam-game-data](https://data.world/craigkelly/steam-game-data)
 
 ## Project setup
 ```
