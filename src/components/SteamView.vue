@@ -92,7 +92,7 @@ export default class SteamView extends Vue {
     private maxCount : number = 200;
     private svg = d3.select(this.$refs.canvas as HTMLElement);
     private force = d3.forceSimulation()
-        .force("collide",d3.forceCollide(((d:any)=>d.radius)))
+        .force("collide",d3.forceCollide(((d:any)=>d.radius+8)).iterations(16))
         .force("center",d3.forceCenter(300,300))
         .force("y", d3.forceY(0))
         .force("x", d3.forceX(0))
