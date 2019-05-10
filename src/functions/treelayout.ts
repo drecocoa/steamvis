@@ -130,7 +130,7 @@ const Apportion = (v:TreeNode,ancestor:TreeNode,distance:number):TreeNode =>{
         vol = NextLeft(vol) as TreeNode;
         vor = NextRight(vor) as TreeNode;
         ForceGetL(vor).ancestor = v;
-        let shift = vil.x+sil-(vir.x+sir)+distance;
+        const shift = vil.x+sil-(vir.x+sir)+distance;
         if(shift>0){
             MoveSubTree(Ancestor(vil,v,ancestor),v,shift);
             sir += shift;
@@ -210,12 +210,13 @@ const Shift = (v:TreeNode)=>{
 }
 
 
-export const TreeLayout = (root:TreeNode,wdistance:number=15,hdistance:number=15)=>{
+export const TreeLayout = (root:TreeNode)=>{
+    const wdistance:number=1;
+    const hdistance:number=1;
     InitPass(root);
     FirstPass(root,wdistance);
     SecondPass(root,0,0,hdistance);
     CleanPass(root);
-    console.log(root);
 }
 
 
@@ -227,7 +228,7 @@ const RoundMap = (org:Point,maxx:Point,style:DrawStyle)=>{
         radius = style.dr;
     }else{
         //todo better solution
-        let depth =(org.y/maxx.y);
+        const depth =(org.y/maxx.y);
         if(style.__depthr__.last===undefined){
             style.__depthr__.last = 0;
         }
@@ -253,7 +254,7 @@ const CreateNodeDOM = (node:TreeNode,maxx:Point,style:DrawStyle)=>{
     }else{
         circle.setAttribute("r",style.r(node,d).toString());
     }
-    let a = RoundMap(node,maxx,style);
+    const a = RoundMap(node,maxx,style);
     circle.setAttribute("cx",(a.x+style.offset.x).toString());
     circle.setAttribute("cy",(a.y+style.offset.y).toString());
     if(typeof style.fillColor ==="string"){
