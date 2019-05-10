@@ -18,6 +18,24 @@ interface TreeNodeLayout{
     shift:number
 }
 
+interface Point{
+    x:number,
+    y:number
+};
+
+interface DrawStyle{
+    r:number|((node:TreeNode,depth:number)=>number);
+    dr:number|((depth:number)=>number);
+    offset:Point;
+    lineColor:string|((depth:number)=>string);
+    fillColor:string|((node:TreeNode,depth:number)=>string);
+    lineStyle:"stright"|"curve"
+    beginAngle:number
+    endAngle:number
+
+    __depthr__:any
+}
+
 const InitPass = (v:TreeNode)=>{
     if(v.__layout__){
 
@@ -192,50 +210,140 @@ const Shift = (v:TreeNode)=>{
 }
 
 
-
 export const TreeLayout = (root:TreeNode,wdistance:number=15,hdistance:number=15)=>{
     InitPass(root);
-    console.log(root);
     FirstPass(root,wdistance);
     SecondPass(root,0,0,hdistance);
+    CleanPass(root);
     console.log(root);
-    //CleanPass(root);
 }
 
-const RoundMap = (org:{x:number,y:number},maxx:number,radius:number,beginAngle:number=0,endAngle:number=2*Math.PI)=>{
-    const angle = (endAngle-beginAngle)*org.x/(maxx+1)+beginAngle;
-    return { x: Math.sin(angle)*radius*org.y,y:Math.cos(angle)*radius*org.y };
 
+const RoundMap = (org:Point,maxx:Point,style:DrawStyle)=>{
+    const angle = (style.endAngle-style.beginAngle)*org.x/(maxx.x+1)+style.beginAngle;
+    
+    let radius:number=1;
+    if(typeof style.dr ==="number"){
+        radius = style.dr;
+    }else{
+        //todo better solution
+        let depth =(org.y/maxx.y);
+        if(style.__depthr__.last===undefined){
+            style.__depthr__.last = 0;
+        }
+        if(style.__depthr__[depth]){
+            radius = style.__depthr__[depth];
+        }else{
+            radius = style.__depthr__.last+style.dr(depth);
+            style.__depthr__[depth]=radius;
+            style.__depthr__.last=radius;
+        }
+    }
+
+
+    return { x: Math.sin(angle)*radius,y:Math.cos(angle)*radius};
+    //return {x:org.x,y:org.y};
 }
 
-const CreateNodeDOM = (node:TreeNode,maxx:number,r:number,dr:number,center:{x:number,y:number}={x:300,y:300})=>{
+const CreateNodeDOM = (node:TreeNode,maxx:Point,style:DrawStyle)=>{
     const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
-    circle.setAttribute("r",r.toString());
-    let a = RoundMap(node,maxx,dr);
-    circle.setAttribute("cx",(a.x+center.x).toString());
-    circle.setAttribute("cy",(a.y+center.y).toString());
+    const d=(node.y/maxx.y);
+    if(typeof style.r ==="number"){
+        circle.setAttribute("r",style.r.toString());
+    }else{
+        circle.setAttribute("r",style.r(node,d).toString());
+    }
+    let a = RoundMap(node,maxx,style);
+    circle.setAttribute("cx",(a.x+style.offset.x).toString());
+    circle.setAttribute("cy",(a.y+style.offset.y).toString());
+    if(typeof style.fillColor ==="string"){
+        circle.setAttribute("fill",style.fillColor);
+    }else{
+        circle.setAttribute("fill",style.fillColor(node,d));
+    }
     return circle;
 }
 
-const GetMaxX = (node:TreeNode):number=>{
-    if(node.children.length==0)return node.x;
-    return Math.max(node.x,node.children.map(d=>GetMaxX(d)).reduce((a,b)=>Math.max(a,b)) as number);
+const GetMaxXY = (node:TreeNode):Point=>{
+    if(node.children.length==0)return {x:node.x,y:node.y};
+    const obj =node.children.map(d=>GetMaxXY(d)).reduce((a,b)=>({x:Math.max(a.x,b.x),y:Math.max(a.y,b.y)}));
+    return {x:Math.max(node.x,obj.x),y:obj.y};
 }
 
-const DrawLine = (from:{x:number,y:number},to:{x:number,y:number},offset:{x:number,y:number}={x:300,y:300})=>{
+
+const DrawLink = (from:Point,to:Point,depth:number,style:DrawStyle)=>{
     const l = document.createElementNS("http://www.w3.org/2000/svg","path");
-    l.setAttribute("d",`M${from.x+offset.x} ${from.y+offset.y} L ${to.x+offset.x} ${to.y+offset.y} `);
-    l.setAttribute("stroke","black");
+    const offset = style.offset;
+    if(style.lineStyle=="curve"){
+        const centery = (from.y+to.y)/2+offset.y;
+        l.setAttribute("d",`M${from.x+offset.x} ${from.y+offset.y} C ${from.x+offset.x} ${centery}, ${to.x+offset.x} ${centery}, ${to.x+offset.x} ${to.y+offset.y} `);
+    }else{
+        l.setAttribute("d",`M${from.x+offset.x} ${from.y+offset.y} L ${to.x+offset.x} ${to.y+offset.y} `);
+    }
+    l.setAttribute("fill","transparent");
+    
+    if(typeof style.lineColor ==="string"){
+        l.setAttribute("stroke",style.lineColor);
+    }else{
+        l.setAttribute("stroke",style.lineColor(depth));
+    }
     return l;
 }
 
-export const DrawTree = (parent:SVGElement,node:TreeNode,maxx:number=-1,r:number=5,dr:number=5)=>{
-    if(maxx==-1)maxx = GetMaxX(node);
-    parent.appendChild(CreateNodeDOM(node,maxx,r,dr));
-    if(!node.children)return;
-    for(let c of node.children){
-        parent.appendChild(DrawLine(RoundMap(node,maxx,dr),RoundMap(c,maxx,dr)));
-        DrawTree(parent,c,maxx,r,dr);
+const DrawTreeInner = (parent:SVGElement,node:TreeNode,style:DrawStyle,maxx:Point={x:-1,y:-1})=>{
+    if(maxx.x==-1){
+        maxx = GetMaxXY(node);
+        console.log(maxx);
     }
+    for(let c of node.children){
+        parent.appendChild(DrawLink(RoundMap(node,maxx,style),RoundMap(c,maxx,style),c.y/maxx.y,style));
+        DrawTreeInner(parent,c,style,maxx);
+    }
+    parent.appendChild(CreateNodeDOM(node,maxx,style));
+}
 
+export const DrawTree = (parent:SVGElement,node:TreeNode,style:{
+    r?:number|((node:TreeNode,depth:number)=>number),
+    dr?:number,
+    offset?:Point,
+    lineColor?:string|((depth:number)=>string),
+    fillColor?:string|((node:TreeNode,depth:number)=>string),
+    lineStyle?:"stright"|"curve"
+    beginAngle?:number
+    endAngle?:number
+    }={})=>{
+    //todo move out?
+    const st:DrawStyle = {
+        r:(node:TreeNode,d:number)=>{
+            return 6*(1-d)+5;
+        },
+        dr:(d:number)=>{
+            return d==0?1:90*d;
+        },
+        offset:{x:300,y:300},
+        lineColor:(d:number)=>{
+            const c1 = Math.floor((d*0.6+0.25)*255).toString(16);
+            const c2 = Math.floor((d*0.4+0.1)*255).toString(16);
+            return `#${c1}${c1}${c2}`;
+        },
+        fillColor:(node:TreeNode,d:number)=>{
+            const c1 = Math.floor((d*0.5+0.25)*255).toString(16);
+            const c2 = Math.floor((d*0.4+0.1)*255).toString(16);
+            return `#${c1}${c2}${c1}`;
+        },
+        lineStyle:"curve",
+        beginAngle:0,
+        endAngle:Math.PI*2,
+        __depthr__:{}
+    }
+    if(style.r)st.r = style.r;
+    if(style.dr)st.dr = style.dr;
+    if(style.offset)st.offset = style.offset;
+    if(style.lineColor)st.lineColor = style.lineColor;
+    if(style.fillColor)st.fillColor = style.fillColor;
+    if(style.lineStyle)st.lineStyle = style.lineStyle;
+    if(style.beginAngle)st.beginAngle = style.beginAngle;
+    if(style.endAngle)st.endAngle = style.endAngle;
+
+    DrawTreeInner(parent,node,st);
 }

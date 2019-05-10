@@ -24,14 +24,14 @@ export default class SteamView extends Vue {
                     {
                         x:0,
                         y:0,
-                        children:[{x:0,y:0,children:[]},{x:0,y:0,children:[]}]
+                        children:[{x:0,y:0,children:[]},{x:0,y:0,children:[]},{x:0,y:0,children:[]},{x:0,y:0,children:[]}]
                     }
                 ]
             },
             {
                 x:0,
                 y:0,
-                children:[{x:0,y:0,children:[]},{x:0,y:0,children:[]}]
+                children:[{x:0,y:0,children:[{x:0,y:0,children:[]},{x:0,y:0,children:[]}]},{x:0,y:0,children:[{x:0,y:0,children:[]}]}]
             }
         ] as TreeNode[],
     }
