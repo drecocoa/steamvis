@@ -10,7 +10,7 @@ import { Component, Prop, Vue,Watch } from 'vue-property-decorator';
 import { DrawTree,TreeNode,TreeLayout } from '@/functions/treelayout'
 
 @Component
-export default class SteamView extends Vue {
+export default class TreeView extends Vue {
     // private selectedData : GameData[] = GameDB;
     // private svg = (this.$refs.canvas as SVGElement);
     private data = {
@@ -38,6 +38,7 @@ export default class SteamView extends Vue {
     mounted(){
         TreeLayout(this.data);
         DrawTree(this.$refs.canvas as SVGElement,this.data);
+        
     }
 }
 </script>

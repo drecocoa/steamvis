@@ -29,7 +29,7 @@ interface DrawStyle{
     offset:Point;
     lineColor:string|((depth:number)=>string);
     fillColor:string|((node:TreeNode,depth:number)=>string);
-    lineStyle:"stright"|"curve"
+    lineStyle:"line"|"curve"
     beginAngle:number
     endAngle:number
 
@@ -309,7 +309,7 @@ export const DrawTree = (parent:SVGElement,node:TreeNode,style:{
     offset?:Point,
     lineColor?:string|((depth:number)=>string),
     fillColor?:string|((node:TreeNode,depth:number)=>string),
-    lineStyle?:"stright"|"curve"
+    lineStyle?:"line"|"curve"
     beginAngle?:number
     endAngle?:number
     }={})=>{
